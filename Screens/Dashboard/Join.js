@@ -1,5 +1,10 @@
 import React, { Component } from 'react';
 
+import { initializeApp } from "firebase/app";
+import {getDatabase, onValue, update, onChildAdded, set, ref, push, onChildChanged, onChildRemoved, onChildMoved} from "firebase/database";
+import {getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged} from 'firebase/auth'
+
+
 import {
   AppRegistry,
   StyleSheet,
@@ -14,6 +19,28 @@ import {
 import QRCodeScanner from 'react-native-qrcode-scanner';
 import { RNCamera } from 'react-native-camera';
 
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyALID8MLqfjVxCn5uLTPxv0xA57y0GwCsM",
+  authDomain: "qrattendance-app.firebaseapp.com",
+  projectId: "qrattendance-app",
+  storageBucket: "qrattendance-app.appspot.com",
+  messagingSenderId: "782791449502",
+  appId: "1:782791449502:web:78aae4c045bb4ac61ad48f",
+  databaseURL: "https://qrattendance-app-default-rtdb.firebaseio.com/"
+};
+
+//initialize firebase
+const app = initializeApp(firebaseConfig);
+
+//firebase authentication
+const auth = getAuth(app);
+
+//connect to firebase DB
+const db = getDatabase();
+
+
 class Join extends Component {
   constructor(props){
     super(props);
@@ -22,9 +49,35 @@ class Join extends Component {
     }
   }
   onSuccess = e => {
-    ToastAndroid.show("Marking attendance", ToastAndroid.LONG);
+    //get QR data
+    const qrData = (e.data);
+
+
+    ToastAndroid.show(`Marking attendance`, ToastAndroid.LONG);
     this.setState({
       isScanned: true
+    });
+
+    //check if user is signed in
+    onAuthStateChanged(auth, (user) => {
+      if(user){
+        //get user token
+        const firebaseID = user.uid;
+
+        //get attendance time
+        const timeStamp = new Date();
+        const timeToString = timeStamp.toString();
+        set(ref(db, "attendance/" + qrData + "/" + firebaseID), {
+          user: firebaseID,
+          attended: 1,
+          timeStamp: timeToString
+        }).then(() => {
+            ToastAndroid.show("Attendance marked", ToastAndroid.LONG);
+            this.setState({
+              isScanned: false
+            });
+        })
+      }
     })
   };
 

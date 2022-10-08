@@ -1,59 +1,92 @@
-import react from "react";
-import { ScrollView, StyleSheet, View, Text, Image } from "react-native";
+import react, {useState, useEffect} from "react";
+import { ScrollView, StyleSheet, View, Text, AsyncStorage, Image, ActivityIndicator } from "react-native";
+import { initializeApp } from "firebase/app";
+import {getDatabase, onValue, update, onChildAdded, set, ref, push, onChildChanged, onChildRemoved, onChildMoved} from "firebase/database";
+import {getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged} from 'firebase/auth'
+import CoursesList from "./Components/Courses";
+// Your web app's Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyALID8MLqfjVxCn5uLTPxv0xA57y0GwCsM",
+    authDomain: "qrattendance-app.firebaseapp.com",
+    projectId: "qrattendance-app",
+    storageBucket: "qrattendance-app.appspot.com",
+    messagingSenderId: "782791449502",
+    appId: "1:782791449502:web:78aae4c045bb4ac61ad48f",
+    databaseURL: "https://qrattendance-app-default-rtdb.firebaseio.com/"
+  };
+  
+  //initialize firebase
+  const app = initializeApp(firebaseConfig);
+  
+  //firebase authentication
+  const auth = getAuth(app);
+  
+  //connect to firebase DB
+  const db = getDatabase();
 
 const Home = () => {
+
+    //state data
+    const [email, setEmail] = useState("");
+    const [fullname, setFullname] = useState("");
+    const [role, setRole] = useState("")
+    const [upcoming, setUpcoming] = useState(0);
+    const [courses, setCourses] = useState([]);
+    const [loaded, setLoaded] = useState(false)
+
+    //run when app finish loading
+    useEffect(() => {
+        const user = auth.currentUser;
+        //get token
+        
+        const firebaseID = user.uid
+        //get user
+        const getUser = ref(db, "users/" + firebaseID);
+        onValue(getUser, (snapshot) => {
+            setEmail(snapshot.child("email").val());
+            setFullname(snapshot.child("name").val());
+            setRole(snapshot.child("role").val());
+        });
+        const list = [];
+        const getCourses = ref(db, "courses");
+        onChildAdded(getCourses, (data) => {
+            list.push(data);
+            setLoaded(true)
+        })
+        
+        
+    }, [])
+
+
     return(
         <ScrollView>
             <Text style={styles.headerText}>
-                Welcome John Doe
+                Welcome {fullname}
             </Text>
             {/* Header Boxes */}
             <View style={styles.row}>
                 <View style={{ backgroundColor: "#BF40BF", ...styles.columnTwo}}>
                     <Text style={{color: "#fff", alignSelf: "flex-start"}}>Upcoming Class</Text>
-                    <Text style={{color: "#fff", alignSelf: "flex-end", fontSize: 40}}>0</Text>
+                    <Text style={{color: "#fff", alignSelf: "flex-end", fontSize: 20, fontWeight: "bold"}}>{upcoming}</Text>
                 </View>
                 <View style={{ backgroundColor: "#CBC3E3", ...styles.columnTwo}}>
-                    <Text style={{color: "#000", alignSelf: "flex-start"}}>Upcoming Class</Text>
-                    <Text style={{color: "#000", alignSelf: "flex-end", fontSize: 40}}>0</Text>
+                    <Text style={{color: "#000", alignSelf: "flex-start"}}>Role</Text>
+                    <Text style={{color: "#000", alignSelf: "flex-end", fontSize: 20, fontWeight: "bold"}}>{role.toUpperCase()}</Text>
                 </View>
             </View>
-            <View style={{ backgroundColor: "#e2e2e2", ...styles.rowAround}}>
+            {/* <View style={{ backgroundColor: "#e2e2e2", ...styles.rowAround}}>
                 <View style={{width: "61%", backgroundColor: "#BF40BF", borderRadius: 10, borderTopEndRadius: 200, borderBottomEndRadius: 200, height: 80}}>
 
                 </View>
                 <View style={{width: "31%", backgroundColor: "transparent", height: 80}}></View>
-            </View>
+            </View> */}
             <Text style={styles.headerText}>
                 Upcoming Classes - Reminder
             </Text>
-            <View style={{width: "95%", alignSelf: "center", backgroundColor: "#fff", paddingBottom: 10, marginVertical: 10, elevation: 5}}>
-                <Image source={{uri: "https://cdn1.byjus.com/wp-content/uploads/2019/07/25-Important-Topics-in-Biology.png"}} resizeMode="cover" style={{width: "100%", height: 130, borderRadius: 20}}>
 
-                </Image>
-                <View style={{width: "100%", paddingHorizontal: 10}}>
-                    <Text style={styles.headerText}>
-                        Principles of Biology
-                    </Text>
-                    <Text style={styles.text}>Prof. John Simeon</Text>
-                    <Text style={styles.text}>Learning the principles of biology and 25 major topics in biology...</Text>
-                    <Text style={styles.text}>29/09/2022 12:30:00pm</Text>
-                </View>
-            </View>
 
-            <View style={{width: "95%", alignSelf: "center", backgroundColor: "#fff", paddingBottom: 10, marginVertical: 10, elevation: 5}}>
-                <Image source={{uri: "https://images.theconversation.com/files/191827/original/file-20171025-25516-g7rtyl.jpg?ixlib=rb-1.1.0&rect=0%2C70%2C7875%2C5667&q=45&auto=format&w=926&fit=clip"}} resizeMode="cover" style={{width: "100%", height: 130, borderRadius: 20}}>
-
-                </Image>
-                <View style={{width: "100%", paddingHorizontal: 10}}>
-                    <Text style={styles.headerText}>
-                        Physics 504 - Gravity
-                    </Text>
-                    <Text style={styles.text}>Prof. Micheal Faraday</Text>
-                    <Text style={styles.text}>Learning the principles of biology and 25 major topics in biology...</Text>
-                    <Text style={styles.text}>29/09/2022 12:30:00pm</Text>
-                </View>
-            </View>
+            {/* render upcoming course list */}
+            <CoursesList hideRole={true} />
             
         </ScrollView>
     )

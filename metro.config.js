@@ -12,6 +12,12 @@ module.exports = {
         experimentalImportSupport: false,
         inlineRequires: true,
       },
+      resolver: {
+        sourceExts: ['js', 'json', 'ts', 'tsx', 'cjs'],
+      },
     }),
+  },
+  resolver: {
+    sourceExts: ['js', 'json', 'ts', 'tsx', 'cjs'],
   },
 };

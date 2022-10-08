@@ -41,6 +41,7 @@
      AsyncStorage.getItem("getToken").then((token) => {
        if(token != null && token != undefined){
          // There is an active user. redirect to dashboard
+         navigation.navigate("Dashboard")
        }else{
          // No user is logged. Redirect to login
          navigation.navigate("Login")
